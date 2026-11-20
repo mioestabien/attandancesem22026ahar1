@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jadual Kelas — Dr. Abdul Hadi</title>
+<script>
+/* =================================================================
+   UBAH DI SINI SAHAJA
+   ================================================================= */
+
+// Halaman kehadiran (dalam repo yang sama). Tak perlu diubah.
+const WEBAPP_URL = "hadir.html";
+
+// Tarikh minggu 1 kuliah (Isnin), format "YYYY-MM-DD". Biar "" jika tak mahu papar no. minggu.
+const MULA_SEMESTER = "";
+
+const TAJUK = "Jadual Kelas · Sem 2 2026/2027";
+const PENSYARAH = "Dr. Abdul Hadi bin Abdul Rahim";
+
+// Satu baris = satu slot kelas. hari: Isnin/Selasa/Rabu/Khamis/Jumaat/Sabtu/Ahad
+const KELAS = [
+  { seksyen: "822", kod: "LQAF 0823", kursus: "Quranic Language 2", hari: "Isnin",  mula: "14:00", tamat: "16:00", bilik: "Jurjani Ex.Hall LR(B).27" },
+  { seksyen: "130", kod: "LQAF 0824", kursus: "Quranic Language 2", hari: "Selasa", mula: "08:00", tamat: "11:00", bilik: "KOD CR2" },
+  { seksyen: "822", kod: "LQAF 0823", kursus: "Quranic Language 2", hari: "Selasa", mula: "16:00", tamat: "18:00", bilik: "Jurjani Ex.Hall LR(B).22" },
+  { seksyen: "304", kod: "LQAF 0823", kursus: "Quranic Language 2", hari: "Rabu",   mula: "08:00", tamat: "10:00", bilik: "OCD Mini Audi" },
+  { seksyen: "130", kod: "LQAF 0824", kursus: "Quranic Language 2", hari: "Rabu",   mula: "10:00", tamat: "12:00", bilik: "KOM TR19" },
+  { seksyen: "300", kod: "LQAF 0823", kursus: "Quranic Language 2", hari: "Rabu",   mula: "14:00", tamat: "16:00", bilik: "OCD Mini Audi" },
+  { seksyen: "130", kod: "LQAF 0824", kursus: "Quranic Language 2", hari: "Khamis", mula: "10:00", tamat: "12:00", bilik: "OCD CR 3" },
+  { seksyen: "425", kod: "LQAF 0823", kursus: "Quranic Language 2", hari: "Khamis", mula: "14:00", tamat: "16:00", bilik: "Jurjani Ex.Hall LR(B).36" },
+  { seksyen: "130", kod: "LQAF 0824", kursus: "Quranic Language 2", hari: "Jumaat", mula: "08:00", tamat: "10:00", bilik: "OCD CR 3" },
+  { seksyen: "300", kod: "LQAF 0823", kursus: "Quranic Language 2", hari: "Jumaat", mula: "10:00", tamat: "12:00", bilik: "OCD SR 3" },
+];
+/* ================================================================= */
+</script>
+<style>
+  :root{--ink:#1c2422;--mute:#66706c;--line:#e2e5e3;--bg:#f5f6f3;--card:#fff;--acc:#1f5f8b;--now:#1f8a57;--next:#b7860b}
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px 14px 40px}
+  header h1{font-size:20px;margin:0}
+  header p{margin:2px 0 0;color:var(--mute);font-size:13px}
+  .hero{margin:14px 0;background:var(--card);border:1px solid var(--line);border-left:6px solid var(--next);border-radius:12px;padding:14px 16px}
+  .hero.now{border-left-color:var(--now)}
+  .hero .tag{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--next)}
+  .hero.now .tag{color:var(--now)}
+  .hero .big{font-size:20px;font-weight:700;margin:2px 0}
+  .hero .sub{color:var(--mute);font-size:14px}
+  .secs{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 18px}
+  .secs a{font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .day{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+  .day.today{border:2px solid var(--acc)}
+  .day h2{font-size:14px;margin:0 0 8px;display:flex;justify-content:space-between}
+  .day h2 span{font-weight:400;color:var(--acc);font-size:12px}
+  .k{border-radius:9px;padding:8px 9px;margin-bottom:8px;background:#f2f5f7;border-left:4px solid #9fb6c7}
+  .k.now{background:#e5f5ec;border-left-color:var(--now)}
+  .k.next{background:#fdf5df;border-left-color:var(--next)}
+  .k.past{opacity:.55}
+  .k .t{font-size:13px;font-weight:700}
+  .k .c{font-size:14px}
+  .k .r{font-size:12px;color:var(--mute)}
+  .none{color:var(--mute);font-size:13px;padding:4px 2px}
+  a.btn{display:inline-block;text-decoration:none;background:var(--acc);color:#fff;border-radius:8px;padding:6px 10px;font-size:13px;margin-top:6px}
+  a.btn.ghost{background:#fff;color:var(--acc);border:1px solid var(--acc)}
+  .note{color:var(--mute);font-size:12px;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="tajuk"></h1>
+    <p id="sub"></p>
+  </header>
+  <div id="hero"></div>
+  <div class="secs" id="secs"></div>
+  <div class="grid" id="grid"></div>
+  <p class="note">Butang <b>Kehadiran</b> membuka halaman kehadiran (perlu log masuk).</p>
+</div>
+
+<script>
+const HARI = ["Ahad","Isnin","Selasa","Rabu","Khamis","Jumaat","Sabtu"];
+const ALIAS = {mon:1,isn:1,tue:2,sel:2,wed:3,rab:3,thu:4,kha:4,fri:5,jum:5,sat:6,sab:6,sun:0,ahd:0,aha:0};
+function dayIdx(h){ return ALIAS[String(h).trim().toLowerCase().slice(0,3)]; }
+function mins(t){ const [h,m]=t.split(":").map(Number); return h*60+(m||0); }
+function link(sec){ return WEBAPP_URL + (WEBAPP_URL.includes("?")?"&":"?") + "sec=" + encodeURIComponent(sec); }
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+const kelas = KELAS.map(k => ({...k, d: dayIdx(k.hari), m0: mins(k.mula), m1: mins(k.tamat)}))
+                   .sort((a,b) => a.d-b.d || a.m0-b.m0);
+
+function render(){
+  const now = new Date(), today = now.getDay(), nm = now.getHours()*60 + now.getMinutes();
+  document.getElementById("tajuk").textContent = TAJUK;
+  let sub = PENSYARAH + " · " + HARI[today] + ", " + now.toLocaleDateString("ms-MY",{day:"numeric",month:"long",year:"numeric"});
+  if (MULA_SEMESTER){
+    const w = Math.floor((now - new Date(MULA_SEMESTER+"T00:00:00")) / 604800000) + 1;
+    if (w >= 1 && w <= 20) sub += " · Minggu " + w;
+  }
+  document.getElementById("sub").textContent = sub;
+
+  // Kelas sekarang / seterusnya (cari sehingga 7 hari ke depan)
+  const current = kelas.find(k => k.d===today && nm>=k.m0 && nm<k.m1);
+  let next = null, nextOff = 0;
+  for (let off=0; off<8 && !next; off++){
+    const d = (today+off)%7;
+    next = kelas.find(k => k.d===d && (off>0 || k.m0>nm) && k !== current);
+    if (next) nextOff = off;
+  }
+  const hero = document.getElementById("hero");
+  const card = (k, now, label) =>
+    '<div class="hero'+(now?' now':'')+'"><div class="tag">'+label+'</div>'+
+    '<div class="big">'+esc(k.mula)+'–'+esc(k.tamat)+' · Seksyen '+esc(k.seksyen)+'</div>'+
+    '<div class="sub">'+esc(k.kod)+' '+esc(k.kursus)+' · '+esc(k.bilik)+'</div>'+
+    '<a class="btn" href="'+link(k.seksyen)+'" >Kehadiran '+esc(k.seksyen)+'</a></div>';
+  let h = "";
+  if (current) h += card(current, true, "Sedang berlangsung");
+  if (next){
+    const when = nextOff===0 ? "Seterusnya · hari ini" : nextOff===1 ? "Seterusnya · esok ("+HARI[next.d]+")" : "Seterusnya · "+HARI[next.d];
+    h += card(next, false, when);
+  }
+  hero.innerHTML = h;
+
+  // Butang setiap seksyen
+  const secs = [...new Set(kelas.map(k => k.seksyen))].sort();
+  document.getElementById("secs").innerHTML = secs.map(s =>
+    '<a class="btn ghost" href="'+link(s)+'" >Kehadiran '+esc(s)+'</a>').join("");
+
+  // Grid mingguan (Isnin–Jumaat; Sabtu/Ahad hanya jika ada kelas)
+  const days = [1,2,3,4,5].concat([6,0].filter(d => kelas.some(k => k.d===d)));
+  document.getElementById("grid").innerHTML = days.map(d => {
+    const list = kelas.filter(k => k.d===d);
+    return '<section class="day'+(d===today?' today':'')+'"><h2>'+HARI[d]+(d===today?'<span>hari ini</span>':'')+'</h2>'+
+      (list.length ? list.map(k => {
+        let cls = "";
+        if (k===current) cls=" now"; else if (k===next) cls=" next"; else if (d===today && k.m1<=nm) cls=" past";
+        return '<div class="k'+cls+'"><div class="t">'+esc(k.mula)+'–'+esc(k.tamat)+'</div>'+
+          '<div class="c">'+esc(k.kod)+' · Seksyen '+esc(k.seksyen)+'</div>'+
+          '<div class="r">'+esc(k.bilik)+'</div>'+
+          '<a class="btn" href="'+link(k.seksyen)+'" >Kehadiran</a></div>';
+      }).join("") : '<div class="none">Tiada kelas</div>') + '</section>';
+  }).join("");
+}
+render();
+setInterval(render, 60000);
+</script>
+</body>
+</html>

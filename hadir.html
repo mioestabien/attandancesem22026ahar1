@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kehadiran</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script>
+/* ===================== TETAPAN ===================== */
+const SUPABASE_URL = "https://fjsiymzpqwcqxwnbhuar.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Pkhkm7fFNMm4gpOg29hJFg_1-T0jI46";   // kunci awam (selamat; data dilindungi RLS)
+const PENSYARAH = "DR. ABDUL HADI BIN ABDUL RAHIM";
+const SEMESTER  = "Semester 2, 2026/2027";
+const INSTITUSI = "International Islamic University Malaysia";
+const TARIKH_SETIAP_HALAMAN = 10;
+/* =================================================== */
+</script>
+<style>
+  :root{--ink:#1d2321;--mute:#6b7571;--line:#e3e6e4;--bg:#f6f7f5;--card:#fff;--h:#1f8a57;--th:#c0392b;--mc:#b7860b;--acc:#1f5f8b}
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+  header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding:10px 12px}
+  h1{font-size:17px;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center}
+  h1 a{font-size:13px;font-weight:400;color:var(--acc);text-decoration:none}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  select,input,textarea{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  button{font:inherit;border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 12px;cursor:pointer}
+  button.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+  button:disabled{opacity:.5}
+  .chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px}
+  .chip{white-space:nowrap;font-size:12px;padding:4px 9px;border-radius:999px;background:#eef1ef;border:none}
+  .chip.on{background:var(--acc);color:#fff}
+  .stats{font-size:13px;color:var(--mute);margin-top:6px}
+  .stats b.h{color:var(--h)}.stats b.th{color:var(--th)}.stats b.mc{color:var(--mc)}
+  main{padding:8px 12px 110px;max-width:760px;margin:0 auto}
+  .bulk{display:flex;gap:8px;margin:6px 0 10px}
+  .st{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px}
+  .st .n{flex:1;min-width:0}
+  .st .nm{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .st .mt{font-size:12px;color:var(--mute)}
+  .seg{display:flex;gap:4px}
+  .seg button{min-width:44px;padding:9px 6px;font-size:13px;font-weight:600}
+  .seg button.H.on{background:var(--h);color:#fff;border-color:var(--h)}
+  .seg button.TH.on{background:var(--th);color:#fff;border-color:var(--th)}
+  .seg button.MC.on{background:var(--mc);color:#fff;border-color:var(--mc)}
+  .nosig{font-size:10px;color:var(--th);margin-left:4px}
+  footer{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);padding:10px 12px;display:flex;justify-content:center;z-index:5}
+  footer button{flex:1;max-width:260px;padding:12px}
+  .msg{font-size:13px;padding:8px 10px;border-radius:8px;margin:8px 0;background:#eef5fb}
+  .msg.err{background:#fde8e8;color:#8a1c1c}
+  .msg a{color:var(--acc);font-weight:600}
+  details{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-top:14px}
+  summary{cursor:pointer;font-weight:600}
+  textarea{width:100%;min-height:150px;margin:8px 0;font-family:ui-monospace,Consolas,monospace;font-size:13px}
+  .dirty{color:var(--th);font-size:12px}
+  .empty{color:var(--mute);text-align:center;padding:30px 0}
+  #login{max-width:380px;margin:60px auto;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}
+  #login input{width:100%;margin:6px 0}
+  .hide{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- ============ LOG MASUK ============ -->
+<div id="login" class="hide">
+  <h1>Kehadiran — Log masuk</h1>
+  <input type="email" id="email" placeholder="Emel" autocomplete="username">
+  <input type="password" id="pw" placeholder="Kata laluan (jika sudah ditetapkan)" autocomplete="current-password">
+  <div class="row" style="margin-top:8px">
+    <button class="pri" onclick="loginPw()">Log masuk</button>
+    <button onclick="loginLink()">Hantar pautan ke emel</button>
+  </div>
+  <div id="loginMsg"></div>
+  <p class="stats">Kali pertama: tekan "Hantar pautan ke emel", buka emel di peranti ini, klik pautan. Selepas itu boleh tetapkan kata laluan.</p>
+</div>
+
+<!-- ============ APLIKASI ============ -->
+<div id="app" class="hide">
+<header>
+  <h1>Kehadiran Kelas <a href="index.html">← Jadual</a></h1>
+  <div class="row">
+    <select id="sec"></select>
+    <input type="date" id="tarikh">
+    <span id="dirty" class="dirty"></span>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="stats" id="stats"></div>
+</header>
+
+<main>
+  <div id="msg"></div>
+  <div class="bulk">
+    <button onclick="setAll('H')">Semua Hadir</button>
+    <button onclick="setAll('')">Kosongkan</button>
+  </div>
+  <div id="list"><div class="empty">Memuatkan…</div></div>
+
+  <details>
+    <summary>PDF kehadiran</summary>
+    <div class="row" style="margin-top:8px">
+      <button class="pri" onclick="janaPdf()">Jana PDF seksyen ini</button>
+      <button onclick="senaraiPdf()">PDF terdahulu</button>
+    </div>
+    <div id="pdfout"></div>
+  </details>
+
+  <details>
+    <summary>Tandatangan pelajar</summary>
+    <p class="stats">Muat naik <code>sigs.json</code> hasil skrip Python. Tandatangan pelajar yang sama akan diganti.</p>
+    <div class="row">
+      <input type="file" id="sigFile" accept=".json,application/json">
+      <button class="pri" onclick="uploadSigs()">Muat naik</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button onclick="belumTT()">Siapa belum tandatangan?</button>
+      <button onclick="muatCsv(false)">CSV semua pelajar</button>
+      <button onclick="muatCsv(true)">CSV belum tandatangan</button>
+    </div>
+    <div id="sigout"></div>
+  </details>
+
+  <details>
+    <summary>Import senarai pelajar</summary>
+    <p class="stats">Satu pelajar satu baris: <code>MATRIK NAMA</code> (tab/koma/ruang). Nombor giliran di depan diabaikan.</p>
+    <div class="row">
+      <input type="text" id="impSec" placeholder="No. seksyen" style="width:120px">
+      <input type="text" id="impKod" placeholder="Kod kursus (seksyen baharu)" style="width:200px">
+      <select id="impMode"><option value="tambah">Tambah (kekal yang ada)</option><option value="ganti">Ganti semua</option></select>
+    </div>
+    <textarea id="impText" placeholder="263978	MUHAMMAD NAZIF IHSAN BIN MOHD NAZI"></textarea>
+    <button class="pri" onclick="importNow()">Import</button>
+  </details>
+
+  <details>
+    <summary>Akaun</summary>
+    <p class="stats" id="who"></p>
+    <div class="row">
+      <input type="password" id="newPw" placeholder="Kata laluan baharu (≥ 8 aksara)" autocomplete="new-password">
+      <button onclick="setPw()">Tetapkan kata laluan</button>
+      <button onclick="logout()">Log keluar</button>
+    </div>
+    <div id="akaunout"></div>
+  </details>
+</main>
+
+<footer><button class="pri" id="save" onclick="simpan()">Simpan</button></footer>
+</div>
+
+<script>
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let sections = [], roster = [], dates = [], sigSet = new Set(), state = {}, saved = {}, lastSec = '', lastDate = '';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const box = (html, err) => html ? '<div class="msg'+(err?' err':'')+'">'+html+'</div>' : '';
+const msg = (h, e) => $('msg').innerHTML = box(h, e);
+function todayIso(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); }
+function isDirty(){ return Object.keys(state).some(k => state[k] !== saved[k]); }
+function chk(r){ if (r.error) throw r.error; return r.data; }
+async function fetchAll(q){            // lepasi had 1000 baris
+  let out = [], from = 0;
+  for(;;){ const d = chk(await q().range(from, from+999)); out = out.concat(d); if (d.length < 1000) return out; from += 1000; }
+}
+window.addEventListener('beforeunload', e => { if (isDirty()) { e.preventDefault(); e.returnValue=''; } });
+
+/* ---------------- Log masuk ---------------- */
+async function loginPw(){
+  const r = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('pw').value });
+  if (r.error) $('loginMsg').innerHTML = box(esc(r.error.message === 'Invalid login credentials' ? 'Emel atau kata laluan salah.' : r.error.message), true);
+}
+async function loginLink(){
+  const email = $('email').value.trim();
+  if (!email) return $('loginMsg').innerHTML = box('Isi emel dahulu.', true);
+  const r = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname + location.search } });
+  $('loginMsg').innerHTML = r.error ? box(esc(r.error.message), true) : box('✔ Pautan dihantar ke '+esc(email)+'. Buka emel dan klik pautan itu.');
+}
+async function setPw(){
+  const pw = $('newPw').value;
+  if (pw.length < 8) return $('akaunout').innerHTML = box('Sekurang-kurangnya 8 aksara.', true);
+  const r = await sb.auth.updateUser({ password: pw });
+  $('akaunout').innerHTML = r.error ? box(esc(r.error.message), true) : box('✔ Kata laluan ditetapkan. Lain kali boleh log masuk dengan emel + kata laluan.');
+  $('newPw').value = '';
+}
+async function logout(){ await sb.auth.signOut(); location.reload(); }
+
+let started = false;
+sb.auth.onAuthStateChange((ev, session) => { setTimeout(() => route(session), 0); });
+async function route(session){
+  if (!session){ $('app').classList.add('hide'); $('login').classList.remove('hide'); return; }
+  if (started) return;
+  const ok = (await sb.rpc('is_owner')).data;
+  if (!ok){
+    $('login').classList.remove('hide');
+    $('loginMsg').innerHTML = box('Akaun '+esc(session.user.email)+' tiada akses.', true);
+    await sb.auth.signOut(); return;
+  }
+  started = true;
+  $('login').classList.add('hide'); $('app').classList.remove('hide');
+  $('who').textContent = 'Log masuk sebagai ' + session.user.email;
+  if (location.hash.includes('access_token')) history.replaceState(null, '', location.pathname + location.search);
+  init();
+}
+
+/* ---------------- Kehadiran ---------------- */
+async function init(){
+  $('tarikh').value = todayIso();
+  try {
+    sections = chk(await sb.from('sections').select('*').order('code'));
+    $('sec').innerHTML = sections.map(s => '<option value="'+esc(s.code)+'">'+esc(s.code)+' · '+esc(s.course_code)+'</option>').join('');
+    const want = new URLSearchParams(location.search).get('sec');
+    if (want && sections.some(s => s.code === want)) $('sec').value = want;
+    $('impSec').value = $('sec').value;
+    load();
+  } catch(e){ msg(esc(e.message), true); }
+}
+
+async function load(){
+  if (isDirty() && !confirm('Ada perubahan belum disimpan. Teruskan tanpa simpan?')) { $('sec').value = lastSec; $('tarikh').value = lastDate; return; }
+  lastSec = $('sec').value; lastDate = $('tarikh').value;
+  const sec = lastSec, iso = lastDate;
+  $('list').innerHTML = '<div class="empty">Memuatkan…</div>'; msg('');
+  try {
+    const [st, at, sg] = await Promise.all([
+      fetchAll(() => sb.from('students').select('matric,name,sort_order').eq('section', sec).order('sort_order').order('matric')),
+      fetchAll(() => sb.from('attendance').select('matric,class_date,status').eq('section', sec)),
+      fetchAll(() => sb.from('signatures').select('matric').eq('idx', 1)),
+    ]);
+    roster = st; sigSet = new Set(sg.map(x => x.matric));
+    dates = [...new Set(at.map(a => a.class_date))].sort();
+    state = {}; saved = {};
+    roster.forEach(s => { state[s.matric] = ''; });
+    at.filter(a => a.class_date === iso).forEach(a => { if (a.matric in state) state[a.matric] = a.status; });
+    saved = Object.assign({}, state);
+    render();
+  } catch(e){ $('list').innerHTML=''; msg(esc(e.message), true); }
+}
+
+function render(){
+  const cur = $('tarikh').value;
+  $('chips').innerHTML = dates.slice().reverse().map(d =>
+    '<button class="chip'+(d===cur?' on':'')+'" onclick="pickDate(\''+d+'\')">'+d.slice(8)+'/'+d.slice(5,7)+'</button>').join('');
+  if (!roster.length){ $('list').innerHTML = '<div class="empty">Tiada pelajar. Guna "Import senarai pelajar".</div>'; stats(); return; }
+  const small = window.innerWidth < 420;
+  $('list').innerHTML = roster.map((s,i) =>
+    '<div class="st"><div class="n"><div class="nm">'+(i+1)+'. '+esc(s.name)+'</div>'+
+    '<div class="mt">'+esc(s.matric)+(sigSet.size && !sigSet.has(s.matric) ? '<span class="nosig">• tiada TT</span>' : '')+'</div></div>'+
+    '<div class="seg" data-m="'+esc(s.matric)+'">'+
+      ['H','TH','MC'].map(v => '<button class="'+v+(state[s.matric]===v?' on':'')+'" onclick="tap(this,\''+v+'\')">'+
+        (small ? v : v==='H'?'Hadir':v==='TH'?'Tidak':'MC')+'</button>').join('')+
+    '</div></div>').join('');
+  stats();
+}
+function tap(btn, v){
+  const m = btn.parentNode.dataset.m;
+  state[m] = state[m] === v ? '' : v;
+  btn.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', state[m] !== '' && b.classList.contains(state[m])));
+  stats();
+}
+function setAll(v){ roster.forEach(s => state[s.matric] = v); render(); }
+function stats(){
+  const c = {H:0,TH:0,MC:0,'':0}; Object.values(state).forEach(v => c[v||'']++);
+  $('stats').innerHTML = 'Hadir <b class="h">'+c.H+'</b> · Tidak <b class="th">'+c.TH+'</b> · MC <b class="mc">'+c.MC+'</b> · Belum ditanda '+c['']+' · Jumlah '+roster.length;
+  $('dirty').textContent = isDirty() ? '● belum disimpan' : '';
+}
+function pickDate(d){ $('tarikh').value = d; load(); }
+
+async function simpan(){
+  const sec = $('sec').value, iso = $('tarikh').value;
+  if (!iso) return msg('Pilih tarikh.', true);
+  const b = $('save'); b.disabled = true; b.textContent = 'Menyimpan…';
+  try {
+    const up = [], del = [];
+    roster.forEach(s => { const v = state[s.matric]; if (v) up.push({ section: sec, matric: s.matric, class_date: iso, status: v, updated_at: new Date().toISOString() }); else del.push(s.matric); });
+    if (up.length) chk(await sb.from('attendance').upsert(up));
+    if (del.length) chk(await sb.from('attendance').delete().eq('section', sec).eq('class_date', iso).in('matric', del));
+    saved = Object.assign({}, state);
+    if (up.length && !dates.includes(iso)) { dates.push(iso); dates.sort(); }
+    if (!up.length) dates = dates.filter(d => d !== iso);
+    render();
+    msg('✔ Disimpan: '+up.length+' rekod, tarikh '+esc(iso)+'.');
+  } catch(e){ msg('Gagal simpan: '+esc(e.message), true); }
+  b.disabled = false; b.textContent = 'Simpan';
+}
+
+/* ---------------- PDF ---------------- */
+function hash(s){ let h = 0; for (const ch of s) h = (h*31 + ch.charCodeAt(0)) % 9973; return h; }
+function stamp(){ const d = new Date(), p = n => String(n).padStart(2,'0'); return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes()); }
+
+async function buildPdf(sec){
+  const info = sections.find(s => s.code === sec) || {};
+  const st = await fetchAll(() => sb.from('students').select('matric,name,sort_order').eq('section', sec).order('sort_order').order('matric'));
+  const at = await fetchAll(() => sb.from('attendance').select('matric,class_date,status').eq('section', sec));
+  const matrics = st.map(s => s.matric);
+  let sg = [];
+  for (let i = 0; i < matrics.length; i += 50)
+    sg = sg.concat(chk(await sb.from('signatures').select('matric,idx,png').in('matric', matrics.slice(i, i+50)).order('idx')));
+  const sigs = {}; sg.forEach(x => (sigs[x.matric] = sigs[x.matric] || []).push(x.png));
+  const ds = [...new Set(at.map(a => a.class_date))].sort();
+  const val = {}; at.forEach(a => val[a.matric+'|'+a.class_date] = a.status);
+
+  // tandatangan: putar ikut kali hadir + offset ikut matrik
+  const img = {}, pct = {};
+  st.forEach(s => {
+    let k = hash(s.matric), H = 0, rec = 0;
+    ds.forEach(d => {
+      const v = val[s.matric+'|'+d];
+      if (v) rec++;
+      if (v === 'H') { H++; const L = sigs[s.matric]; if (L && L.length) img[s.matric+'|'+d] = L[(k++) % L.length]; }
+    });
+    pct[s.matric] = rec ? Math.round(100*H/rec)+'%' : '-';
+  });
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const HARI = ['Ahd','Isn','Sel','Rab','Kha','Jum','Sab'];
+  const per = TARIKH_SETIAP_HALAMAN;
+  const chunks = []; for (let i = 0; i < Math.max(ds.length, 1); i += per) chunks.push(ds.slice(i, i+per));
+
+  chunks.forEach((ch, ci) => {
+    const last = ci === chunks.length - 1;
+    if (ci) doc.addPage();
+    doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text('SENARAI KEHADIRAN PELAJAR', 10, 12);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+    doc.text(INSTITUSI + '  ·  ' + SEMESTER, 10, 17);
+    doc.text((info.course_code||'')+' '+(info.course_name||'')+'  ·  Seksyen '+sec+'  ·  Pensyarah: '+PENSYARAH+
+             (chunks.length > 1 ? '  ·  Bahagian '+(ci+1)+'/'+chunks.length : ''), 10, 21.5);
+    const cols = ch.concat(Array(per - ch.length).fill(''));
+    const head = [['No','Matrik','Nama'].concat(cols.map(d => d ? HARI[new Date(d+'T00:00:00').getDay()]+'\n'+d.slice(8)+'/'+d.slice(5,7) : '')).concat(last ? ['% Hadir'] : [])];
+    const body = st.map((s,i) => [String(i+1), s.matric, s.name].concat(cols.map(d => {
+      const v = d ? val[s.matric+'|'+d] : ''; return v === 'TH' || v === 'MC' ? v : '';
+    })).concat(last ? [pct[s.matric]] : []));
+    const W = 277, wNo = 8, wM = 16, wP = last ? 13 : 0, wN = last ? 62 : 70;
+    const wD = (W - wNo - wM - wN - wP) / per;
+    const cs = { 0:{cellWidth:wNo,halign:'center'}, 1:{cellWidth:wM,halign:'center'}, 2:{cellWidth:wN,fontSize:6.5,valign:'middle'} };
+    for (let j = 0; j < per; j++) cs[3+j] = { cellWidth: wD, halign:'center', valign:'middle', fontStyle:'bold' };
+    if (last) cs[3+per] = { cellWidth: wP, halign:'center' };
+    doc.autoTable({
+      head, body, startY: 25, margin: { left: 10, right: 10, top: 12 }, theme: 'grid',
+      styles: { fontSize: 7.5, cellPadding: 0.8, lineColor: 0, lineWidth: 0.15, textColor: 0, minCellHeight: 7, valign: 'middle' },
+      headStyles: { fillColor: [235,235,235], textColor: 0, fontStyle: 'bold', halign: 'center', fontSize: 7 },
+      columnStyles: cs,
+      didParseCell: c => {
+        if (c.section === 'body' && c.column.index >= 3 && c.column.index < 3+per) {
+          if (c.cell.raw === 'TH') c.cell.styles.textColor = [176,0,32];
+          if (c.cell.raw === 'MC') c.cell.styles.textColor = [138,109,0];
+        }
+      },
+      didDrawCell: c => {
+        if (c.section !== 'body' || c.column.index < 3 || c.column.index >= 3+per) return;
+        const d = cols[c.column.index - 3]; if (!d) return;
+        const src = img[st[c.row.index].matric+'|'+d]; if (!src) return;
+        let w = c.cell.width - 1, h = w / 3;
+        if (h > c.cell.height - 0.8) { h = c.cell.height - 0.8; w = h * 3; }
+        try { doc.addImage(src, 'PNG', c.cell.x + (c.cell.width - w)/2, c.cell.y + (c.cell.height - h)/2, w, h); } catch(e) {}
+      },
+    });
+    if (last) {
+      doc.setFontSize(7.5);
+      doc.text('H = Hadir (tandatangan)   TH = Tidak hadir   MC = Cuti sakit / berkebenaran   ·   Dijana: '+new Date().toLocaleString('ms-MY'),
+               10, Math.min(doc.lastAutoTable.finalY + 5, 205));
+    }
+  });
+  return { doc, nDates: ds.length, nSig: Object.keys(sigs).length };
+}
+
+async function janaPdf(){
+  const sec = $('sec').value;
+  if (isDirty() && !confirm('Ada perubahan belum disimpan — PDF tidak akan memasukkannya. Teruskan?')) return;
+  $('pdfout').innerHTML = box('Menjana PDF…');
+  try {
+    const { doc, nDates, nSig } = await buildPdf(sec);
+    const name = 'Kehadiran_'+sec+'_'+stamp()+'.pdf';
+    const blob = doc.output('blob');
+    const path = sec + '/' + name;
+    chk(await sb.storage.from('laporan').upload(path, blob, { contentType: 'application/pdf', upsert: true }));
+    const s = chk(await sb.storage.from('laporan').createSignedUrl(path, 60*60*24*7, { download: name }));
+    const local = URL.createObjectURL(blob);
+    $('pdfout').innerHTML = box('✔ '+esc(name)+' — '+nDates+' tarikh'+(nSig ? '' : ' (belum ada tandatangan dimuat naik)')+'<br>'+
+      '<a href="'+local+'" download="'+esc(name)+'">Muat turun sekarang</a> · <a href="'+s.signedUrl+'" target="_blank">Pautan simpanan (sah 7 hari)</a>');
+  } catch(e){ $('pdfout').innerHTML = box(esc(e.message), true); }
+}
+
+async function senaraiPdf(){
+  const sec = $('sec').value;
+  try {
+    const files = chk(await sb.storage.from('laporan').list(sec, { limit: 20, sortBy: { column: 'created_at', order: 'desc' } }));
+    if (!files.length) return $('pdfout').innerHTML = box('Belum ada PDF untuk seksyen '+esc(sec)+'.');
+    const urls = chk(await sb.storage.from('laporan').createSignedUrls(files.map(f => sec+'/'+f.name), 3600, { download: true }));
+    $('pdfout').innerHTML = box(urls.map((u,i) => '<a href="'+u.signedUrl+'">'+esc(files[i].name)+'</a>').join('<br>'));
+  } catch(e){ $('pdfout').innerHTML = box(esc(e.message), true); }
+}
+
+/* ---------------- Tandatangan ---------------- */
+async function uploadSigs(){
+  const f = $('sigFile').files[0];
+  if (!f) return $('sigout').innerHTML = box('Pilih fail sigs.json dahulu.', true);
+  $('sigout').innerHTML = box('Memuat naik…');
+  try {
+    const data = JSON.parse(await f.text());
+    const keys = Object.keys(data).filter(k => Array.isArray(data[k]) && data[k].length);
+    for (let i = 0; i < keys.length; i += 40) {
+      const part = keys.slice(i, i+40);
+      chk(await sb.from('signatures').delete().in('matric', part));
+      const rows = [];
+      part.forEach(m => data[m].slice(0, 9).forEach((png, j) => rows.push({ matric: m, idx: j+1,
+        png: png.startsWith('data:') ? png : 'data:image/png;base64,'+png })));
+      chk(await sb.from('signatures').insert(rows));
+      $('sigout').innerHTML = box('Memuat naik… '+Math.min(i+40, keys.length)+'/'+keys.length);
+    }
+    $('sigout').innerHTML = box('✔ Tandatangan '+keys.length+' pelajar dimuat naik.');
+    load();
+  } catch(e){ $('sigout').innerHTML = box('Gagal: '+esc(e.message), true); }
+}
+async function belumTT(){
+  const list = roster.filter(s => !sigSet.has(s.matric));
+  $('sigout').innerHTML = box('<b>'+list.length+' pelajar belum ada tandatangan</b> (seksyen '+esc($('sec').value)+')<br>'+list.map(s => esc(s.matric+' '+s.name)).join('<br>'));
+}
+async function muatCsv(belum){
+  try {
+    const st = await fetchAll(() => sb.from('students').select('section,matric,name').order('section').order('sort_order'));
+    const sg = new Set((await fetchAll(() => sb.from('signatures').select('matric').eq('idx', 1))).map(x => x.matric));
+    const lines = ['seksyen,matrik,nama'].concat(st.filter(s => !belum || !sg.has(s.matric))
+      .map(s => [s.section, s.matric, '"'+s.name.replace(/"/g,'""')+'"'].join(',')));
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
+    a.download = belum ? 'pelajar_belum_tt.csv' : 'pelajar.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  } catch(e){ $('sigout').innerHTML = box(esc(e.message), true); }
+}
+
+/* ---------------- Import ---------------- */
+async function importNow(){
+  const sec = $('impSec').value.trim(), mode = $('impMode').value;
+  if (!sec) return msg('Isi no. seksyen.', true);
+  const parsed = [];
+  $('impText').value.split(/\r?\n/).forEach(line => {
+    const m = line.trim().match(/(\d{5,})\s*[,;\t|]?\s*(.*)$/);
+    if (!m) return;
+    const nama = m[2].replace(/[,;\t|]+/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
+    if (nama && !parsed.some(p => p.matric === m[1])) parsed.push({ matric: m[1], name: nama });
+  });
+  if (!parsed.length) return msg('Tiada baris sah. Format: MATRIK NAMA.', true);
+  if (mode === 'ganti' && !confirm('Ganti semua pelajar seksyen '+sec+'? Rekod kehadiran pelajar lama akan dipadam.')) return;
+  try {
+    if (!sections.some(s => s.code === sec))
+      chk(await sb.from('sections').insert({ code: sec, course_code: $('impKod').value.trim().toUpperCase(), course_name: '' }));
+    if (mode === 'ganti') chk(await sb.from('students').delete().eq('section', sec));
+    const existing = new Set((await fetchAll(() => sb.from('students').select('matric,sort_order').eq('section', sec))).map(x => x.matric));
+    let n = existing.size;
+    const rows = parsed.filter(p => !existing.has(p.matric)).map(p => ({ section: sec, matric: p.matric, name: p.name, sort_order: ++n }));
+    if (rows.length) chk(await sb.from('students').insert(rows));
+    $('impText').value = '';
+    sections = chk(await sb.from('sections').select('*').order('code'));
+    $('sec').innerHTML = sections.map(s => '<option value="'+esc(s.code)+'">'+esc(s.code)+' · '+esc(s.course_code)+'</option>').join('');
+    $('sec').value = sec; state = {}; saved = {};
+    await load();
+    msg('✔ Seksyen '+esc(sec)+': '+rows.length+' ditambah, '+(parsed.length - rows.length)+' sudah wujud.');
+  } catch(e){ msg(esc(e.message), true); }
+}
+
+$('sec').addEventListener('change', () => { $('impSec').value = $('sec').value; load(); });
+$('tarikh').addEventListener('change', load);
+</script>
+</body>
+</html>
